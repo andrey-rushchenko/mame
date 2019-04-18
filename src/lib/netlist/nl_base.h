@@ -433,7 +433,11 @@ namespace netlist
 			void operator delete (void * mem) = delete;
 	#endif
 		protected:
-			~object_t() noexcept = default; // only childs should be destructible
+			// only childs should be destructible
+			~object_t() noexcept
+			{
+				name_hash().erase(name_hash().find(this));
+			}
 
 		private:
 			//pstring m_name;
@@ -561,7 +565,11 @@ namespace netlist
 			net_t & net() noexcept { return *m_net;}
 
 			bool is_logic() const NL_NOEXCEPT;
+			bool is_logic_input() const NL_NOEXCEPT;
+			bool is_logic_output() const NL_NOEXCEPT;
 			bool is_analog() const NL_NOEXCEPT;
+			bool is_analog_input() const NL_NOEXCEPT;
+			bool is_analog_output() const NL_NOEXCEPT;
 
 			bool is_state(state_e astate) const noexcept { return (m_state == astate); }
 			state_e terminal_state() const noexcept { return m_state; }
@@ -1369,7 +1377,10 @@ namespace netlist
 		{
 			for (auto & d : m_devices)
 				if (d.first == name)
-					log().fatal(MF_1_DUPLICATE_NAME_DEVICE_LIST, d.first);
+				{
+					dev.release();
+					log().fatal(MF_DUPLICATE_NAME_DEVICE_LIST(name));
+				}
 			//m_devices.push_back(std::move(dev));
 			m_devices.insert(m_devices.end(), { name, std::move(dev) });
 		}
@@ -1437,7 +1448,7 @@ namespace netlist
 
 		COPYASSIGNMOVE(netlist_t, delete)
 
-		~netlist_t() noexcept = default;
+		virtual ~netlist_t() noexcept = default;
 
 		/* run functions */
 
@@ -1550,7 +1561,7 @@ namespace netlist
 			bool err = false;
 			auto vald = plib::pstonum_ne<T>(p, err);
 			if (err)
-				device.state().log().fatal(MF_2_INVALID_NUMBER_CONVERSION_1_2, name, p);
+				device.state().log().fatal(MF_INVALID_NUMBER_CONVERSION_1_2(name, p));
 			m_param = vald;
 		}
 		else
