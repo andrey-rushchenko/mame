@@ -103,6 +103,7 @@ public:
 	// construction/destruction
 	m68000_base_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
+	static constexpr uint8_t autovector(int level) { return 0x18 + level; }
 	void autovectors_map(address_map &map);
 
 protected:
@@ -394,11 +395,11 @@ public:
 	virtual void device_start() override;
 };
 
-class m68008plcc_device : public m68000_base_device
+class m68008fn_device : public m68000_base_device
 {
 public:
 	// construction/destruction
-	m68008plcc_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
+	m68008fn_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
 	virtual std::unique_ptr<util::disasm_interface> create_disassembler() override;
 
@@ -576,12 +577,9 @@ public:
 	virtual void device_start() override;
 };
 
-class scc68070_device : public m68000_base_device
+class scc68070_base_device : public m68000_base_device
 {
-public:
-	// construction/destruction
-	scc68070_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
-
+protected:
 	virtual std::unique_ptr<util::disasm_interface> create_disassembler() override;
 
 	virtual uint32_t execute_min_cycles() const override { return 4; };
@@ -589,6 +587,9 @@ public:
 
 	// device-level overrides
 	virtual void device_start() override;
+
+	scc68070_base_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock,
+						const device_type type, address_map_constructor internal_map);
 };
 
 
@@ -634,7 +635,7 @@ public:
 
 DECLARE_DEVICE_TYPE(M68000, m68000_device)
 DECLARE_DEVICE_TYPE(M68008, m68008_device)
-DECLARE_DEVICE_TYPE(M68008PLCC, m68008plcc_device)
+DECLARE_DEVICE_TYPE(M68008FN, m68008fn_device)
 DECLARE_DEVICE_TYPE(M68010, m68010_device)
 DECLARE_DEVICE_TYPE(M68EC020, m68ec020_device)
 DECLARE_DEVICE_TYPE(M68020, m68020_device)
@@ -646,7 +647,6 @@ DECLARE_DEVICE_TYPE(M68030, m68030_device)
 DECLARE_DEVICE_TYPE(M68EC040, m68ec040_device)
 DECLARE_DEVICE_TYPE(M68LC040, m68lc040_device)
 DECLARE_DEVICE_TYPE(M68040, m68040_device)
-DECLARE_DEVICE_TYPE(SCC68070, scc68070_device)
 DECLARE_DEVICE_TYPE(FSCPU32, fscpu32_device)
 DECLARE_DEVICE_TYPE(MCF5206E, mcf5206e_device)
 

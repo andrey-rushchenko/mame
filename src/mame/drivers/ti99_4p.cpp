@@ -170,11 +170,9 @@ private:
 	void setaddress(offs_t mode, uint16_t address);
 	uint16_t memread(offs_t offset);
 	void memwrite(offs_t offset, uint16_t data);
-	DECLARE_WRITE_LINE_MEMBER( dbin_in );
 
 	void external_operation(offs_t offset, uint8_t data);
 	DECLARE_WRITE_LINE_MEMBER( clock_out );
-	DECLARE_WRITE_LINE_MEMBER( dbin_line );
 
 	// CRU (Communication Register Unit) handling
 	uint8_t cruread(offs_t offset);
@@ -431,10 +429,11 @@ int ti99_4p_state::decode_address(int address)
     Called when the memory access starts by setting the address bus. From that
     point on, we suspend the CPU until all operations are done.
 */
-void ti99_4p_state::setaddress(offs_t mode, uint16_t address)
+void ti99_4p_state::setaddress(offs_t address, uint16_t busctrl)
 {
-	m_addr_buf = address;
+	m_addr_buf = address << 1;
 	m_waitcount = 0;
+	m_dbin = ((busctrl & TMS99xx_BUS_DBIN)!=0);
 
 	LOGMASKED(LOG_ADDRESS, "set address %04x\n", m_addr_buf);
 
@@ -614,14 +613,6 @@ void ti99_4p_state::debugger_write(offs_t offset, uint16_t data)
 }
 
 /*
-   Data bus in (DBIN) line from the CPU.
-*/
-WRITE_LINE_MEMBER( ti99_4p_state::dbin_line )
-{
-	m_dbin = (line_state)state;
-}
-
-/*
     The datamux is connected to the clock line in order to operate
     the wait state counter and to read/write the bytes.
 */
@@ -726,7 +717,7 @@ void ti99_4p_state::cruwrite(offs_t offset, uint8_t data)
 uint8_t ti99_4p_state::cruread(offs_t offset)
 {
 	uint8_t value = 0;
-	m_peribox->crureadz(offset<<4, &value);
+	m_peribox->crureadz(offset<<1, &value);
 	return value;
 }
 
@@ -1006,7 +997,6 @@ void ti99_4p_state::ti99_4p_60hz(machine_config& config)
 	m_cpu->extop_cb().set(FUNC(ti99_4p_state::external_operation));
 	m_cpu->intlevel_cb().set(FUNC(ti99_4p_state::interrupt_level));
 	m_cpu->clkout_cb().set(FUNC(ti99_4p_state::clock_out));
-	m_cpu->dbin_cb().set(FUNC(ti99_4p_state::dbin_line));
 
 	// tms9901
 	TMS9901(config, m_tms9901, 0);
